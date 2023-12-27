@@ -1,0 +1,114 @@
+mql5
+//===============================================
+// League X7 Expert Advisor
+// Developer: Forex Robot Easy Team
+// Website: forexroboteasy.com
+//===============================================
+
+// Include necessary libraries and indicators
+#include <Trade\Trade.mqh>
+#include <MovingAverages\MA.mqh>
+
+// Define constants
+#define SYMBOL_DEFAULT   'EURUSD'  // Default symbol to trade
+#define PERIOD_DEFAULT   PERIOD_H1  // Default timeframe
+#define STOPLOSS_DEFAULT 50         // Default stop loss in pips
+
+// Global variables
+CTrade trade;    // Trade object
+CMA ma;          // Moving Average object
+double stopLoss; // Stop loss distance in points
+
+// Initialization function
+int OnInit()
+{
+   // Set stop loss
+   stopLoss = STOPLOSS_DEFAULT * Point;
+
+   // Set symbol and timeframe
+   trade.SetExpertMagicNumber(123456);  // Set expert magic number
+   trade.SetSymbol(SYMBOL_DEFAULT);     // Set symbol
+   trade.SetTradeType(TRADE_SHORT);     // Set trade type to short
+   trade.SetSlippage(3);                // Set slippage
+   trade.SetStopLoss(stopLoss);         // Set stop loss
+   trade.SetTakeProfit(0);              // Disable take profit
+
+   // Set moving average settings
+   ma.Init(Symbol(), PERIOD_DEFAULT, MODE_SMMA, 14, PRICE_CLOSE);
+
+   return(INIT_SUCCEEDED);
+}
+
+// Deinitialization function
+void OnDeinit(const int reason)
+{
+   // Clean up resources
+   trade.CloseAll();
+}
+
+// Trading function
+void OnTick()
+{
+   // Check if the market is open
+   if (trade.IsTradeAllowed())
+   {
+      double maValue = ma.iCustom(Symbol(), PERIOD_DEFAULT, 'Moving Averages', 14, 0, 0);
+
+      // Check if the current price is below the moving average
+      if (Bid < maValue)
+      {
+         // Open a short position
+         trade.Open(PositionGetSymbol(), TRADE_SHORT, 0.01, Bid, 0, 0, 'League X7');
+
+         // Check for errors
+         if (trade.GetLastError() == 0)
+         {
+            Print('Short position opened successfully');
+         }
+         else
+         {
+            Print('Error opening short position: ', trade.GetLastError());
+         }
+      }
+   }
+}
+
+// Custom function to enable customization of the EA
+void CustomizeEA(const string symbol, const ENUM_TIMEFRAMES timeframe, const double stopLossDistance)
+{
+   trade.SetSymbol(symbol);
+   trade.SetTimeframe(timeframe);
+   stopLoss = stopLossDistance * Point;
+   trade.SetStopLoss(stopLoss);
+}
+
+// Custom function to adjust stop loss
+void AdjustStopLoss(const double stopLossDistance)
+{
+   stopLoss = stopLossDistance * Point;
+   trade.SetStopLoss(stopLoss);
+}
+
+// Custom function to close all positions
+void CloseAllPositions()
+{
+   trade.CloseAll();
+}
+
+// Custom function to check if the market is open
+bool IsMarketOpen()
+{
+   return trade.IsTradeAllowed();
+}
+
+// Custom function to get the current moving average value
+double GetMovingAverageValue()
+{
+   return ma.iCustom(Symbol(), PERIOD_DEFAULT, 'Moving Averages', 14, 0, 0);
+}
+
+// Custom function to get the current stop loss distance
+double GetStopLossDistance()
+{
+   return stopLoss / Point;
+}
